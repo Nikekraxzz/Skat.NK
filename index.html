@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Skat">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1b5e3b">
+<meta name="description" content="Skat Reizen und Spielstand">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231b5e3b'/%3E%3Ctext x='50' y='68' text-anchor='middle' font-size='58' fill='white' font-family='system-ui'%3E%E2%99%A3%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231b5e3b'/%3E%3Ctext x='50' y='68' text-anchor='middle' font-size='58' fill='white' font-family='system-ui'%3E%E2%99%A3%3C/text%3E%3C/svg%3E">
+<title>Skat</title>
+<style>
+:root{--bg:#f6f8f6;--fg:#1c2a22;--mut:#5b6b61;--card:#fff;--line:#d3ddd6;--g:#1b5e3b;--gbg:#e3f1e8;--gold:#c8962e;--red:#b3261e;--ob:#fdebd3;--ot:#b35f00;--sel:#1b5e3b;--selt:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121a15;--fg:#e8efe9;--mut:#9fb0a5;--card:#1b2620;--line:#33463b;--g:#6fcf97;--gbg:#1f3a2a;--gold:#e0b04a;--red:#ff8a80;--ob:#40301a;--ot:#ffb454;--sel:#6fcf97;--selt:#0f1d15}}
+:root[data-theme="dark"]{--bg:#121a15;--fg:#e8efe9;--mut:#9fb0a5;--card:#1b2620;--line:#33463b;--g:#6fcf97;--gbg:#1f3a2a;--gold:#e0b04a;--red:#ff8a80;--ob:#40301a;--ot:#ffb454;--sel:#6fcf97;--selt:#0f1d15}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);min-height:100dvh}
+main{max-width:640px;margin:0 auto;padding:12px 14px 48px}
+h1{font-size:22px;margin:0;line-height:1.2;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+h2{font-size:17px;margin:26px 0 10px;color:var(--g)}
+.sub{color:var(--mut);margin:0 0 6px;font-size:14px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{font:inherit;border:2px solid var(--line);background:var(--card);color:var(--fg);border-radius:14px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:84px;font-weight:600;font-size:17px;touch-action:manipulation}
+.btn .s{font-size:34px;line-height:1}
+.btn small{font-weight:400;font-size:12px;color:var(--mut)}
+.btn.red .s{color:var(--red)}
+.btn[aria-pressed="true"]{background:var(--sel);color:var(--selt);border-color:var(--sel)}
+.btn[aria-pressed="true"] .s,.btn[aria-pressed="true"] small{color:var(--selt)}
+.wide{grid-column:1/3;min-height:56px;flex-direction:row;gap:10px}
+.row5{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.row5 .btn{min-height:56px;font-size:14px;border-radius:10px;padding:4px 0}
+.row5 .btn .s{font-size:20px}
+.sum{background:var(--card);border:2px solid var(--g);border-radius:16px;padding:14px;margin-top:20px}
+.sum p{margin:0 0 4px}
+.k{color:var(--mut);font-size:13px}
+.big{font-size:84px;line-height:1;font-weight:800;color:var(--g);text-align:center;margin:10px 0 2px}
+.cap{text-align:center;color:var(--mut);font-size:14px}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:440px}
+th,td{padding:8px 6px;text-align:center;border-bottom:1px solid var(--line)}
+th{color:var(--mut);font-weight:600;font-size:12px}
+td:first-child,th:first-child{text-align:left}
+td.d{font-size:12px;color:var(--mut);text-align:left}
+tr.act td{background:var(--gbg);font-weight:700}
+tr.act td.d{color:var(--fg);font-weight:500}
+td.col{background:color-mix(in srgb,var(--gold) 14%,transparent)}
+tr.act td.sel{background:var(--g);color:var(--selt);border-radius:6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{min-width:46px;text-align:center;padding:6px 4px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--mut);font-size:14px}
+.chip.nl{border-color:var(--ot)}
+.chip.on{background:var(--gbg);color:var(--g);font-weight:700;border-color:var(--g)}
+.chip.top{background:var(--g);color:var(--selt);font-size:16px}
+.card{display:flex;flex-direction:column;align-items:center;justify-content:center;width:40px;height:54px;border-radius:7px;border:1px solid var(--mut);background:var(--card);font-weight:700;font-size:13px;line-height:1.1}
+.card i{font-style:normal;font-size:18px}
+.card.j{border:2px solid var(--gold)}
+.card.jo{background:var(--sel);color:var(--selt);border-color:var(--sel)}
+.card.r{color:var(--red)}
+.cards{display:flex;flex-wrap:wrap;gap:4px}
+.note{font-size:14px;color:var(--mut);margin:8px 0 0}
+.warn{background:var(--ob);color:var(--ot);padding:8px 10px;border-radius:10px;font-size:14px;margin-top:10px}
+ul{padding-left:20px;margin:6px 0}
+li{margin:3px 0;font-size:15px}
+ul ul{margin:2px 0}
+h3{font-size:16px;color:var(--g);margin:18px 0 6px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:4px 0 8px;position:relative;z-index:1}
+.top .btn{min-height:44px;padding:0 14px;font-size:15px;flex-direction:row;white-space:nowrap;flex:none}
+.top-acts{display:flex;gap:8px;align-items:center;flex:none}
+details{border:1px solid var(--line);border-radius:14px;background:var(--card);margin:12px 0;padding:0 14px}
+summary{font-weight:700;color:var(--g);font-size:17px;padding:14px 0;cursor:pointer;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"▾";float:right}
+details[open]>summary::after{content:"▴"}
+details[open]>summary{border-bottom:1px solid var(--line);margin-bottom:10px}
+details>:last-child{margin-bottom:14px}
+.nt{display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid var(--line)}
+.nt b{min-width:40px;font-size:22px;color:var(--g)}
+.nt.tm{opacity:.45}
+.nt .card{width:34px;height:46px}
+.vr{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px}
+.vr input{width:24px;height:24px;flex:none;margin-top:2px}
+dt{font-weight:700;margin-top:8px}
+dd{margin:0;font-size:15px;color:var(--mut)}
+#sb{max-width:640px;margin:0 auto;padding:16px 14px 40px}
+#sb input{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px;width:100%}
+.nf{display:grid;gap:8px;margin-top:14px}
+.add{min-height:48px;width:100%;flex-direction:row}
+.gc{display:flex;gap:8px;margin:8px 0}
+.gc .btn{flex:1;min-height:64px;align-items:flex-start;padding:10px 14px;text-align:left}
+.gc .x{flex:none;width:92px;align-items:center;font-size:15px}
+table.sc{min-width:0;table-layout:fixed}
+table.sc th,table.sc td{padding:4px 3px}
+table.sc input{text-align:center;padding:10px 2px;min-width:0}
+tr.sm th{font-size:20px;color:var(--g)}
+tr.sm th.win{background:var(--g);color:var(--selt);border-radius:8px}
+tr.sm th.neg{color:var(--red)}
+tr.sm th.win.neg{background:var(--red);color:#fff;border-radius:8px}
+.wn{font-weight:400;font-size:14px;color:var(--fg);margin-left:10px}
+.nh{width:100%;display:flex;align-items:baseline;gap:6px}
+.nh b{min-width:0}
+.nt .cards{width:100%}
+#sb select{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;width:100%;margin-top:4px}
+#sb input.bad{border:2px solid #b3261e;background:color-mix(in srgb,#b3261e 16%,var(--bg))}
+.bm{color:var(--red);font-size:14px;margin-top:8px}
+.bm div{margin:3px 0}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.danger{background:#b3261e!important;color:#fff!important;border-color:#b3261e!important}
+.pc{width:100%;min-height:46px;font:inherit;font-weight:700;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:8px;cursor:pointer;padding:0}
+.pc.ng{color:#fff;background:var(--red);border-color:var(--red)}
+.pc.sel{background:var(--sel);color:var(--selt);border-color:var(--sel)}
+.pc.sel.ng{color:#fff;background:var(--red);border-color:var(--red)}
+.pc.bad{border:2px solid #b3261e}
+.pc.lock{opacity:.4;pointer-events:none;cursor:default}
+.chp{font:inherit;font-weight:600;padding:10px 14px;min-height:48px;border:2px solid var(--line);background:var(--card);color:var(--fg);border-radius:12px;cursor:pointer}
+.chp.sel{background:var(--card);color:var(--fg);border:4px solid var(--g);box-shadow:0 0 0 2px color-mix(in srgb,var(--g) 35%,transparent)}
+.arr{min-width:48px;min-height:44px;font-size:28px;line-height:1;padding:0 10px;border-radius:12px;flex:none}
+.arr.done{background:var(--g);color:var(--selt);border-color:var(--g);font-weight:800}
+.chs .arr{align-self:center}
+.chs{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0}
+.pn select{margin-bottom:8px}
+tr.pr td{background:var(--gbg);padding:10px;border-radius:10px}
+.pv{font-weight:700;margin:10px 0 4px}
+.pn-actions{display:flex;gap:8px;margin-top:12px}
+.pn-actions .btn{flex:1;min-height:48px;flex-direction:row;font-size:16px}
+.hist{opacity:.45;pointer-events:none}
+.hist.on{opacity:1;pointer-events:auto}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><h1>Skat</h1><div class="top-acts" id="ma"><button class="btn" id="sbo">Spielstand</button></div></div>
+<p class="sub">Tippe deine Buben an, alles rechnet sofort mit.</p>
+
+<h2>1. Welche Buben hast du?</h2>
+<div class="grid" id="jb"></div>
+
+<h2>2. Welches Spiel willst du reizen?</h2>
+<div class="row5" id="gm"></div>
+
+<div class="sum" aria-live="polite">
+<p class="k">Gewählt</p>
+<p id="chosen" style="font-weight:600;font-size:18px"></p>
+<p class="k" style="margin-top:8px">Berechnung</p>
+<p id="calc" style="font-size:18px"></p>
+<div class="big" id="big"></div>
+<p class="cap" id="cap"></p>
+<div class="warn" id="warn" hidden></div>
+</div>
+
+<h2>3. Spielwerte nach Spitzen</h2>
+<p class="sub">Deine Zeile und dein Spiel sind farbig markiert.</p>
+<div class="tw"><table><thead><tr><th>Spitzen</th><th>Du hast</th><th>Karo 9</th><th>Herz 10</th><th>Pik 11</th><th>Kreuz 12</th><th>Grand 24</th></tr></thead><tbody id="tb"></tbody></table></div>
+<p class="note" id="nul"></p>
+
+<h2>4. Das sagst du beim Reizen an</h2>
+<p class="sub">Grün = bis dahin darfst du gehen. Orange Rand = auch Null-Wert.</p>
+<div class="chips" id="zl"></div>
+
+<h2>5. Trümpfe, deine Buben leuchten grün</h2>
+<p class="sub">Farbspiel: 11 Trümpfe, von hoch nach niedrig.</p>
+<div class="cards" id="tr"></div>
+<p class="note">Grand: nur die 4 Buben sind Trumpf. Null: Ass, König, Dame, Bube, 10, 9, 8, 7.</p>
+
+<h2>6. Karten ohne Trumpf, je Farbe</h2>
+<p class="sub">Vorne stehen die Augen der Farbe, der Bube ist immer Trumpf und fehlt hier.</p>
+<div id="nt"></div>
+<h2>7. Augen pro Karte</h2>
+<div class="tw"><table style="min-width:0"><thead><tr><th>Ass</th><th>Zehn</th><th>König</th><th>Dame</th><th>Bube</th><th>9, 8, 7</th></tr></thead><tbody><tr><td><b>11</b></td><td><b>10</b></td><td><b>4</b></td><td><b>3</b></td><td><b>2</b></td><td><b>0</b></td></tr></tbody></table></div>
+<p class="note">Zusammen 120 Augen. Mit 61 gewinnt der Alleinspieler, mit 90 Schneider.</p>
+
+<h2>8. Die wichtigsten Regeln</h2>
+<h3>1. Grundwert der Spielart</h3>
+<table style="min-width:0"><thead><tr><th>Spielart</th><th>Grundwert</th></tr></thead><tbody><tr><td>Karo</td><td>9</td></tr><tr><td>Herz</td><td>10</td></tr><tr><td>Pik</td><td>11</td></tr><tr><td>Kreuz</td><td>12</td></tr><tr><td>Grand (nur Buben sind Trumpf)</td><td>24</td></tr></tbody></table>
+<p class="note">Ausnahme Null: nicht multipliziert, feste Punkte. Null 23, Null Hand 35, Null Ouvert 46, Null Hand Ouvert 59.</p>
+<h3>2. Faktor bestimmen</h3>
+<ul>
+<li>Spitzen: zähle ab dem Kreuz-Buben, wie viele Buben (oder Trümpfe) du lückenlos hast (mit X) oder wie viele dir lückenlos fehlen (ohne X)</li>
+<li>Spiel: +1, zählt immer</li>
+<li>Hand: +1, Skat nicht aufgenommen</li>
+<li>Schneider: +1, Verlierer hat 30 Augen oder weniger</li>
+<li>Schneider angesagt: +1, vor dem ersten Stich angesagt, nur mit Hand</li>
+<li>Schwarz: +1, Verlierer macht keinen Stich</li>
+<li>Schwarz angesagt: +1, vor dem ersten Stich angesagt, nur mit Hand</li>
+<li>Ouvert: +1, mit offenen Karten gespielt</li>
+</ul>
+<h3>3. Rechnen und aufschreiben</h3>
+<p>Faktor × Grundwert, zum Beispiel 3 × Pik 11 = 33 Punkte.</p>
+<ul>
+<li>Alleinspieler gewinnt: +33, die beiden Gegner bekommen 0</li>
+<li>Alleinspieler verliert: −66 (doppelter Wert), die beiden Gegner bekommen 0</li>
+</ul>
+<h3>Reizen</h3>
+<ul>
+<li>Mittelhand sagt Vorhand an, Vorhand antwortet ja oder passe</li>
+<li>Der Sieger reizt danach gegen Hinterhand</li>
+<li>Nie höher reizen, als dein Spiel wert ist, sonst ist es überreizt</li>
+</ul>
+<h2>9. Tischregel</h2>
+<p class="sub">Haken setzen, was bei euch gilt. Nur diese Punkte erscheinen im Spielstand.</p>
+<div id="vr"></div>
+<div id="va"></div>
+<h2>10. Begriffe und Spielablauf</h2>
+<dl>
+<dt>Vorhand, Mittelhand, Hinterhand</dt><dd>Die Sitzplätze ab links vom Geber. Der Geber ist Hinterhand.</dd>
+<dt>Alleinspieler und Gegenspieler</dt><dd>Der Höchstbietende spielt allein gegen die beiden anderen.</dd>
+<dt>Skat</dt><dd>Die 2 verdeckten Karten. Der Alleinspieler nimmt sie auf und drückt 2 Karten ab.</dd>
+<dt>Spitzen</dt><dd>Mit oder ohne so viele Buben in Folge, beginnend beim Kreuz-Buben.</dd>
+<dt>Hand, Ouvert</dt><dd>Hand: Skat bleibt liegen. Ouvert: offen spielen, nur mit Hand.</dd>
+<dt>Schneider, Schwarz</dt><dd>Schneider: 90 Augen oder mehr. Schwarz: alle Stiche.</dd>
+<dt>Grand, Null</dt><dd>Grand: nur Buben sind Trumpf. Null: kein Trumpf, wer keinen Stich macht, gewinnt.</dd>
+<dt>Bedienen</dt><dd>Die angespielte Farbe oder Trumpf muss zugegeben werden.</dd>
+</dl>
+<ol>
+<li>Geben: 3, Skat, 4, 3 Karten, jeder hat 10.</li>
+<li>Reizen, bis ein Alleinspieler feststeht.</li>
+<li>Skat aufnehmen, 2 Karten drücken, Spiel ansagen.</li>
+<li>Vorhand spielt aus, 10 Stiche werden gespielt.</li>
+<li>Augen zählen und den Spielwert aufschreiben.</li>
+</ol>
+</main>
+<div id="sb" hidden></div>
+<script>
+var J=[0,0,0,0],H=0,G=3;
+var JN=["Kreuz","Pik","Herz","Karo"],SY=["♣","♠","♥","♦"],RED=[0,0,1,1];
+var GM=[["Karo",9,"♦",1],["Herz",10,"♥",1],["Pik",11,"♠",0],["Kreuz",12,"♣",0],["Grand",24,"",0]];
+var ROWS=[[1,1,"Kreuz (Pik fehlt)"],[1,2,"Kreuz, Pik (Herz fehlt)"],[1,3,"Kreuz, Pik, Herz (Karo fehlt)"],[1,4,"alle vier Buben"],[0,1,"Kreuz fehlt (Pik da)"],[0,2,"Kreuz, Pik fehlen (Herz da)"],[0,3,"Kreuz, Pik, Herz fehlen (Karo da)"],[0,4,"kein Bube"]];
+var NL=[23,35,46,59],S={};
+[9,10,11,12].forEach(function(b){for(var m=2;m<=16;m++)S[m*b]=1});
+for(var m=2;m<=6;m++)S[m*24]=1;
+NL.forEach(function(v){S[v]=1});
+var Z=Object.keys(S).map(Number).filter(function(v){return v<=144}).sort(function(a,b){return a-b});
+var $=function(i){return document.getElementById(i)};
+function build(){
+ var h="";
+ for(var i=0;i<4;i++)h+='<button class="btn'+(RED[i]?" red":"")+'" data-j="'+i+'" aria-pressed="false"><span class="s">'+SY[i]+'</span>'+JN[i]+'-Bube<small>'+["höchster","","","niedrigster"][i]+'</small></button>';
+ h+='<button class="btn wide" id="hd" aria-pressed="false">Ich spiele Hand (Skat bleibt liegen, +1)</button>';
+ $("jb").innerHTML=h;
+ var g="";
+ GM.forEach(function(x,i){g+='<button class="btn'+(x[3]?" red":"")+'" data-g="'+i+'" aria-pressed="false"><span class="s">'+(x[2]||"G")+'</span>'+x[0]+'</button>'});
+ $("gm").innerHTML=g;
+ $("jb").onclick=function(e){var b=e.target.closest("[data-j]");if(b){J[+b.dataset.j]^=1;render()}else if(e.target.closest("#hd")){H^=1;render()}};
+ $("gm").onclick=function(e){var b=e.target.closest("[data-g]");if(b){G=+b.dataset.g;render()}};
+ var t="";
+ var jk=[["B","♣",0],["B","♠",0],["B","♥",1],["B","♦",1]];
+ jk.forEach(function(c,i){t+='<div class="card j'+(c[2]?" r":"")+'" data-t="'+i+'">'+c[0]+'<i>'+c[1]+'</i></div>'});
+ ["A","10","K","D","9","8","7"].forEach(function(r){t+='<div class="card tc">'+r+'<i></i></div>'});
+ $("tr").innerHTML=t;
+}
+function render(){
+ var mit=J[0],n=0;
+ for(var i=0;i<4;i++){if(J[i]===mit)n++;else break}
+ var mult=n+1+H,gm=GM[G],res=mult*gm[1];
+ document.querySelectorAll("[data-j]").forEach(function(b){b.setAttribute("aria-pressed",J[+b.dataset.j]?"true":"false")});
+ $("hd").setAttribute("aria-pressed",H?"true":"false");
+ document.querySelectorAll("[data-g]").forEach(function(b){b.setAttribute("aria-pressed",+b.dataset.g===G?"true":"false")});
+ var nm=[];for(i=0;i<4;i++)if(J[i])nm.push(JN[i]+"-Bube");
+ $("chosen").textContent=(nm.length?nm.join(", "):"kein Bube")+(H?" · Hand":"");
+ $("calc").textContent=(mit?"Mit ":"Ohne ")+n+": ("+n+" + 1"+(H?" + 1 Hand":"")+") × "+gm[1]+" = "+res;
+ $("big").textContent=res;
+ $("cap").textContent="Reizwert "+gm[0]+(H?" Hand":"")+": bis hier darfst du gehen";
+ var w=$("warn");
+ if(mit&&n===4&&G<4){w.hidden=false;w.textContent="Mit allen 4 Buben zählen im Farbspiel Trumpf-Ass, Zehn, König … weiter, je +1."}else w.hidden=true;
+ var tb="";
+ ROWS.forEach(function(r){
+  var act=(r[0]===(mit?1:0)&&r[1]===n);
+  tb+='<tr'+(act?' class="act"':'')+'><td>'+(r[0]?"Mit ":"Ohne ")+r[1]+'</td><td class="d">'+r[2]+'</td>';
+  GM.forEach(function(x,c){tb+='<td class="'+(c===G?(act?"sel":"col"):"")+'">'+(r[1]+1+H)*x[1]+'</td>'});
+  tb+='</tr>';
+ });
+ $("tb").innerHTML=tb;
+ $("nul").textContent="Null: "+(H?"Hand 35, Ouvert Hand 59":"23, Ouvert 46")+" (feste Werte, ohne Spitzen).";
+ var z="";
+ Z.forEach(function(v){z+='<span class="chip'+(NL.indexOf(v)>-1?" nl":"")+(v<=res?" on":"")+(v===res?" top":"")+'">'+v+'</span>'});
+ $("zl").innerHTML=z;
+ document.querySelectorAll("[data-t]").forEach(function(c){c.classList.toggle("jo",!!J[+c.dataset.t])});
+ extras();
+}
+var V=[["hd","Hand","Skat nicht aufgenommen, +1.",1],["sn","Schneider","Verlierer hat 30 Augen oder weniger, +1.",1],["sa","Schneider angesagt","Vor dem ersten Stich angesagt, nur mit Hand, +1.",0],["sw","Schwarz","Verlierer macht keinen Stich, +1.",1],["sx","Schwarz angesagt","Vor dem ersten Stich angesagt, nur mit Hand, +1.",0],["ou","Ouvert","Mit offenen Karten gespielt, +1.",1],["nu","Null-Spiele","Feste Werte 23, 35, 46, 59.",1],["ko","Kontra und Re","Doppeln und Zurückdoppeln, je mal 2.",0],["ra","Ramsch","Passen alle, verliert, wer die meisten Augen bekommt.",0],["bo","Bockrunden","Nach bestimmten Ergebnissen zählt eine Runde doppelt.",0]];
+var D;try{D=JSON.parse(localStorage.getItem("skatD"))}catch(e){}
+if(!D||!D.g)D={g:[]};
+if(!D.v)D.v={};V.forEach(function(v){if(D.v[v[0]]===undefined)D.v[v[0]]=v[3]});
+function sv(){try{localStorage.setItem("skatD",JSON.stringify(D))}catch(e){}if(!HSKIP)pushHist()}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5)}
+function today(){var d=new Date();return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2)}
+function fd(s){var p=s.split("-");return p.length==3?p[2]+"."+p[1]+"."+p[0]:s}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function extras(){
+ var sy=GM[G][2],h="",tot=0,cn=0;
+ document.querySelectorAll(".tc").forEach(function(c){c.querySelector("i").textContent=sy||"●";c.classList.toggle("r",!!GM[G][3])});
+ for(var i=0;i<4;i++){
+  var tr=SY[i]===sy;
+  h+='<div class="nt'+(tr?' tm':'')+'"><div class="nh"><span class="'+(RED[i]?'r':'')+'" style="font-size:24px">'+SY[i]+'</span><b>'+(tr?'–':28)+'</b><span class="k">Augen</span><b>'+(tr?'–':7)+'</b><span class="k">Karten</span></div>';
+  if(tr)h+='<span class="k">Trumpffarbe, alles Trumpf</span>';
+  else{tot+=28;cn+=7;h+='<div class="cards">';["A","10","K","D","9","8","7"].forEach(function(r){h+='<div class="card'+(RED[i]?' r':'')+'">'+r+'<i>'+SY[i]+'</i></div>'});h+='</div>'}
+  h+='</div>';
+ }
+ $("nt").innerHTML=h+'<p class="note"><b>Zusammen ohne Trumpf: '+tot+' Augen, '+cn+' Karten</b> (pro Farbe 28 Augen und 7 Karten).</p>';
+}
+function vr(){
+ var h="",on=[],off=[];
+ V.forEach(function(v){var c=D.v[v[0]];(c?on:off).push(v[1]);h+='<label class="vr"><input type="checkbox" data-v="'+v[0]+'"'+(c?" checked":"")+'><span><b>'+v[1]+'</b><br><span class="k">'+v[2]+'</span></span></label>'});
+ if(!$("vr").firstChild)$("vr").innerHTML=h;
+ $("va").innerHTML='<h3>Wir spielen mit</h3><p>'+(on.join(", ")||"keiner Variante")+'</p><p class="k">Ohne: '+(off.join(", ")||"nichts")+'</p>';
+}
+$("vr").addEventListener("change",function(e){var k=e.target.dataset.v;if(k){D.v[k]=e.target.checked?1:0;D.g.forEach(function(g){g.s.forEach(function(s){for(var j in (s.q||{}))ap(g,s,+j)})});sv();vr()}});
+var OK={},LF=null;
+[9,10,11,12,24].forEach(function(b){for(var m=2;m<=20;m++)OK[m*b]=1});
+[23,35,46,59].forEach(function(v){OK[v]=1});
+function pn(v){v=String(v).replace(/[\u2212\u2013]/g,"-").trim();if(v===""||v==="-")return null;return /^-?\d+$/.test(v)?parseInt(v,10):NaN}
+function good(n,tu){var a=(n>0?n:-n)-(tu?50:0);if(n<0){if(a<=0||a%2)return false;a/=2}return !!OK[a]}
+function chk(g,s){
+ var tu=g.m==="t",ms=[],bad={};
+ s.r.forEach(function(r,ri){
+  var nz=[],x="Runde "+(ri+1)+": ";
+  r.forEach(function(v,i){var n=pn(v);if(n===null)return;if(isNaN(n)){bad[ri+"_"+i]=1;ms.push(x+"nur ganze Zahlen eintragen");return}if(n)nz.push([i,n])});
+  if(!nz.length)return;
+  var ng=nz.filter(function(a){return a[1]<0}),all=function(m){nz.forEach(function(a){bad[ri+"_"+a[0]]=1});ms.push(x+m)};
+  if(ng.length>1)return all("nur ein Spieler kann verlieren");
+  if(!tu&&nz.length>1)return all("nur der Alleinspieler bekommt Punkte");
+  if(tu&&!ng.length&&nz.length>1)return all("bei einem gewonnenen Spiel bekommt nur der Alleinspieler Punkte");
+  nz.forEach(function(a){
+   var gg=tu&&ng.length&&a[1]>0;
+   if(!(gg?a[1]===40:good(a[1],tu))){bad[ri+"_"+a[0]]=1;ms.push(x+a[1]+(gg?" geht nicht, Gegner bekommen 40":" ist kein möglicher Wert (gewonnen: Spielwert, verloren: doppelter Spielwert)"))}
+  });
+ });
+ document.querySelectorAll("#b"+s.id+" .pt").forEach(function(e){e.classList.toggle("bad",!!bad[e.dataset.r+"_"+e.dataset.p])});
+ var m=document.getElementById("m"+s.id);
+ if(m)m.innerHTML=ms.slice(0,6).map(function(t){return "<div>⚠ "+t+"</div>"}).join("");
+}
+function two(b,fn){
+ if(b.dataset.sure){fn();return}
+ var l=b.textContent;b.dataset.sure=1;b.textContent="Wirklich löschen?";b.classList.add("danger");
+ setTimeout(function(){if(b.isConnected){delete b.dataset.sure;b.textContent=l;b.classList.remove("danger")}},4000);
+}
+$("sb").addEventListener("focusin",function(e){if(e.target.classList.contains("pt"))LF=e.target});
+function GG(id){return D.g.filter(function(g){return g.id===id})[0]}
+function SS(id){var r=null;D.g.forEach(function(g){g.s.forEach(function(s){if(s.id===id)r=[g,s]})});return r}
+function upd(g,s){
+ var t=g.p.map(function(){return 0}),any=0,w=[];
+ s.r.forEach(function(r){r.forEach(function(v,i){var n=pn(v);if(n!==null&&!isNaN(n)){t[i]+=n;any=1}})});
+ var mx=Math.max.apply(null,t);
+ t.forEach(function(v,i){var e=document.getElementById("t"+s.id+i);if(e){var c=(any&&v===mx?"win":"")+(v<0?" neg":"");e.textContent=v;e.className=c.trim()}if(any&&v===mx)w.push(g.p[i])});
+ var e=document.getElementById("w"+s.id);if(e)e.textContent=any?"★ "+w.join(", "):"";
+ chk(g,s);
+}
+var OP=null,RET=null,DEP={sw:["sn"],sx:["sa","sw","sn","hd"],sa:["hd"]},LB=[["hd","Hand"],["sn","Schneider"],["sa","Schneider angesagt"],["sw","Schwarz"],["sx","Schwarz angesagt"],["ou","Ouvert"]],BS=[9,10,11,12,24];
+var HIST=[],HPOS=-1,HMAX=40,HSKIP=0;
+function snap(){return JSON.stringify(D)}
+function pushHist(){
+ if(HSKIP)return;
+ var s=snap();
+ if(HPOS>=0&&HIST[HPOS]===s)return;
+ HIST=HIST.slice(0,HPOS+1);
+ HIST.push(s);
+ if(HIST.length>HMAX)HIST.shift();
+ HPOS=HIST.length-1;
+ updHistBtns();
+}
+function applyHist(i){
+ if(i<0||i>=HIST.length)return;
+ HSKIP=1;
+ try{D=JSON.parse(HIST[i])}catch(e){HSKIP=0;return}
+ HPOS=i;sv();HSKIP=0;updHistBtns();
+ if(!$("sb").hidden){
+  var open=document.querySelector("#sb [data-og], #sb #sbb");
+  if(document.getElementById("sbb")){
+   var gid=null;D.g.forEach(function(g){g.s.forEach(function(s){if(OP&&s.id===OP.s)gid=g.id})});
+   if(gid)gv(GG(gid),true);else lv();
+  }else lv();
+ }
+}
+function undo(){if(HPOS>0)applyHist(HPOS-1)}
+function redo(){if(HPOS<HIST.length-1)applyHist(HPOS+1)}
+function updHistBtns(){
+ document.querySelectorAll("[data-undo]").forEach(function(b){b.classList.toggle("on",HPOS>0);b.classList.toggle("hist",HPOS<=0)});
+ document.querySelectorAll("[data-redo]").forEach(function(b){b.classList.toggle("on",HPOS<HIST.length-1);b.classList.toggle("hist",HPOS>=HIST.length-1)});
+}
+function histBtns(){return '<button type="button" class="btn arr hist" data-undo title="Rückgängig">↶</button><button type="button" class="btn arr hist" data-redo title="Wiederholen">↷</button>'}
+function updMA(){
+ var h=histBtns();
+ if(RET)h+='<button class="btn arr" id="sbr" title="Zurück zur Punkteingabe">↪</button>';
+ h+='<button class="btn" id="sbo">Spielstand</button>';
+ $("ma").innerHTML=h;
+ $("sbo").onclick=function(){showSb(1);lv()};
+ if(RET)$("sbr").onclick=function(){goRet()};
+ updHistBtns();
+}
+function goRet(){
+ if(!RET)return;
+ var gid=RET.g,sid=RET.s,ri=RET.r;
+ RET=null;updMA();
+ showSb(1);
+ var g=GG(gid);if(!g)return;
+ OP={s:sid,r:ri};
+ g.s.forEach(function(s){s.o=(s.id===sid)});
+ var h='<div class="top"><button class="btn" id="sbb">← Gruppen</button>'+histBtns()+'<button class="btn" id="sbc">Rechner</button></div><h1>'+esc(g.n)+'</h1><label class="k">Wertung <select id="gm" data-gm="'+g.id+'"><option value="l"'+(g.m==="t"?"":" selected")+'>Liste: nur der Alleinspieler bekommt Punkte</option><option value="t"'+(g.m==="t"?" selected":"")+'>Turnier: ±50, Gegner 40</option></select></label><div class="nf"><label class="k">Neues Spiel, Datum <input type="date" id="nd" value="'+today()+'"></label><button class="btn add" id="gs" data-g="'+g.id+'">Neues Spiel starten</button></div><h3>Abende</h3>';
+ g.s.forEach(function(s){h+=sess(g,s)});
+ h+='<button class="btn add" data-dg="'+g.id+'" style="margin-top:22px">Gruppe löschen</button>';
+ $("sb").innerHTML=h;
+ g.s.forEach(function(s){upd(g,s)});
+ updHistBtns();
+ setTimeout(function(){var el=document.querySelector("#b"+sid+" .pr");if(el)el.scrollIntoView({behavior:"smooth",block:"center"})},40);
+}
+function val(q){var o=D.v,f=function(k){return q[k]&&o[k]?1:0};
+ if(q.g===5){if(q.nv)return q.nv;return f("hd")?(f("ou")?59:35):(f("ou")?46:23)}
+ if(q.g===6)return q.rv||10;
+ var v=(q.n+1+f("hd")+f("sn")+f("sa")+f("sw")+f("sx")+f("ou"))*BS[q.g];
+ return q.bo?v*2:v;
+}
+function ap(g,s,ri){
+ var q=s.q[ri],tu=g.m==="t";
+ if(q.p==null){s.r[ri]=g.p.map(function(){return ""});sv();return}
+ var v=val(q);
+ if(q.g===6){s.r[ri]=g.p.map(function(x,i){return i===q.p?String(-(tu?v+50:v)):"0"});sv();return}
+ s.r[ri]=g.p.map(function(x,i){if(i===q.p)return String(q.w?(tu?v+50:v):-(tu?2*v+50:2*v));return tu&&!q.w?"40":"0"});
+ sv();
+}
+function prev(g,q){
+ if(q.p==null)return '<p class="pv k">Tippe oben auf den Namen des Alleinspielers.</p>';
+ var o=D.v,v=val(q),t,x=[],tu=g.m==="t";
+ LB.forEach(function(l){if(q[l[0]]&&o[l[0]]&&(q.g!==5||l[0]==="hd"||l[0]==="ou"))x.push(l[1])});
+ if(q.g===5)t="Null: fester Wert "+v;
+ else if(q.g===6)t="Ramsch: Verlierer bekommt −"+v;
+ else t=(q.m?"Mit ":"Ohne ")+q.n+" + Spiel"+(x.length?" + "+x.join(" + "):"")+" = "+(q.n+1+x.length)+" × "+BS[q.g]+(q.bo?" × 2 Bock":"")+" = "+v;
+ if(q.g===6)return '<p class="pv">'+esc(g.p[q.p])+": "+t+'</p><p class="pv" style="font-size:20px;color:var(--red)">Verloren: −'+v+'</p>';
+ var res=q.w?(tu?v+50:v):-(tu?2*v+50:2*v);
+ return '<p class="pv">'+esc(g.p[q.p])+": "+t+'</p><p class="pv" style="font-size:20px;color:'+(q.w?'var(--g)':'var(--red)')+'">'+(q.w?"Gewonnen: +"+res:"Verloren: "+res)+'</p>';
+}
+function panel(g,s,ri){
+ var q=s.q[ri],o=D.v,h='<div class="pn"><div class="chs">';
+ g.p.forEach(function(p,i){h+='<button class="chp'+(q.p===i?' sel':'')+'" data-pp="'+i+'">'+esc(p)+'</button>'});
+ h+='<button type="button" class="btn arr" data-go-calc="1" title="Zum Rechner (Spitzen prüfen)">↶</button>';
+ h+='<button type="button" class="btn arr done" data-px="1" title="Fertig / Speichern">✓</button>';
+ h+='</div><label class="k">Spielart</label><select data-pf="g">';
+ var games=[["Karo 9",0],["Herz 10",1],["Pik 11",2],["Kreuz 12",3],["Grand 24",4]];
+ if(o.nu)games.push(["Null",5]);
+ if(o.ra)games.push(["Ramsch",6]);
+ games.forEach(function(a){h+='<option value="'+a[1]+'"'+(q.g===a[1]?' selected':'')+'>'+a[0]+'</option>'});
+ h+='</select>';
+ if(q.g===5){
+  var nv=q.nv||23;
+  h+='<label class="k">Null-Wert</label><select data-pf="nv">';
+  [[23,"Null 23"],[35,"Null Hand 35"],[46,"Null Ouvert 46"],[59,"Null Hand Ouvert 59"]].forEach(function(a){h+='<option value="'+a[0]+'"'+(nv===a[0]?' selected':'')+'>'+a[1]+'</option>'});
+  h+='</select>';
+ }
+ if(q.g===6){
+  var rv=q.rv||10,custom=!!q.rvc||[10,20,30,40].indexOf(+rv)<0;
+  h+='<label class="k">Ramsch-Punkte (Verlierer)</label><select data-pf="rvs">';
+  [[10,"10"],[20,"20"],[30,"30"],[40,"40"]].forEach(function(a){h+='<option value="'+a[0]+'"'+(!custom&&+rv===a[0]?' selected':'')+'>'+a[1]+'</option>'});
+  h+='<option value="x"'+(custom?' selected':'')+'>beliebig</option></select>';
+  if(custom)h+='<input type="number" min="1" inputmode="numeric" data-pf="rv" value="'+(q.rv&&custom?q.rv:'')+'" style="margin-top:8px" placeholder="Zahl eingeben">';
+ }
+ if(q.g!==5&&q.g!==6){
+  h+='<label class="k">Spitzen</label><div class="two" style="margin-top:0"><select data-pf="m"><option value="1"'+(q.m?' selected':'')+'>Mit</option><option value="0"'+(q.m?'':' selected')+'>Ohne</option></select><select data-pf="n">';
+  for(var i=1;i<=4;i++)h+='<option'+(q.n===i?' selected':'')+'>'+i+'</option>';
+  h+='</select></div>';
+ }
+ h+='<div class="chs">';
+ if(q.g!==6)h+='<button class="chp'+(!q.w?' sel':'')+'" data-pt="w">Verloren</button>';
+ LB.forEach(function(l){var k=l[0];if(!o[k])return;if(q.g===5||q.g===6)return;if((k==="sa"||k==="sx")&&!q.hd)return;h+='<button class="chp'+(q[k]?' sel':'')+'" data-pt="'+k+'">'+l[1]+'</button>'});
+ if(o.bo&&q.g!==5&&q.g!==6)h+='<button class="chp'+(q.bo?' sel':'')+'" data-pt="bo">Bock</button>';
+ return h+'</div>'+prev(g,q)+'<div class="pn-actions"><button type="button" class="btn" data-rz="1">Zurück setzen</button></div></div>';
+}
+function tbody(g,s){
+ var h="";s.q=s.q||{};
+ s.r.forEach(function(r,ri){
+  var q=s.q[ri],locked=q&&q.p!=null;
+  h+='<tr><td class="k">'+(ri+1)+'</td>';
+  r.forEach(function(v,i){var n=pn(v);h+='<td><button class="pt pc'+(q&&q.p===i?' sel':'')+(n<0?' ng':'')+(locked&&q.p!==i?' lock':'')+'" data-pc="1" data-s="'+s.id+'" data-r="'+ri+'" data-p="'+i+'">'+(v===""?"–":v)+'</button></td>'});
+  h+='</tr>';
+  if(OP&&OP.s===s.id&&OP.r===ri&&q)h+='<tr class="pr"><td colspan="'+(g.p.length+1)+'">'+panel(g,s,ri)+'</td></tr>';
+ });
+ return h;
+}
+function reb(g,s){document.getElementById("b"+s.id).innerHTML=tbody(g,s);upd(g,s)}
+function cx(){var a=SS(OP.s);return[a[0],a[1],a[1].q[OP.r]]}
+function sess(g,s){
+ var h='<details class="se" data-s="'+s.id+'"'+(s.o?" open":"")+'><summary>'+fd(s.d)+'<span class="wn" id="w'+s.id+'"></span></summary><label class="k">Datum <input type="date" value="'+s.d+'" data-dt="'+s.id+'"></label><div class="tw"><table class="sc"><thead><tr><th style="width:28px">#</th>';
+ g.p.forEach(function(p,i){h+='<th><input data-nm="'+i+'" value="'+esc(p)+'"></th>'});
+ h+='</tr><tr class="sm"><th>Σ</th>';
+ g.p.forEach(function(p,i){h+='<th id="t'+s.id+i+'">0</th>'});
+ h+='</tr></thead><tbody id="b'+s.id+'">';
+ h+=tbody(g,s);
+ return h+'</tbody></table></div><div class="bm" id="m'+s.id+'"></div><button class="btn add" data-add="'+s.id+'" style="margin-top:10px">+ Runde</button><p class="k">Tippe in einer Runde auf den Spieler, der gespielt hat. Rot = passt nicht zu den Regeln.</p><button class="btn add" data-ds="'+s.id+'">Abend löschen</button></details>';
+}
+function gv(g,keep){
+ if(!keep)OP=null;
+ var h='<div class="top"><button class="btn" id="sbb">← Gruppen</button>'+histBtns()+'<button class="btn" id="sbc">Rechner</button></div><h1>'+esc(g.n)+'</h1><label class="k">Wertung <select id="gm" data-gm="'+g.id+'"><option value="l"'+(g.m==="t"?"":" selected")+'>Liste: nur der Alleinspieler bekommt Punkte</option><option value="t"'+(g.m==="t"?" selected":"")+'>Turnier: ±50, Gegner 40</option></select></label><div class="nf"><label class="k">Neues Spiel, Datum <input type="date" id="nd" value="'+today()+'"></label><button class="btn add" id="gs" data-g="'+g.id+'">Neues Spiel starten</button></div><h3>Abende</h3>';
+ g.s.forEach(function(s){h+=sess(g,s)});
+ h+='<button class="btn add" data-dg="'+g.id+'" style="margin-top:22px">Gruppe löschen</button>';
+ $("sb").innerHTML=h;
+ g.s.forEach(function(s){upd(g,s)});
+ updHistBtns();
+}
+function lv(){
+ var h='<div class="top"><h1>Spielstand</h1>'+histBtns()+'<button class="btn" id="sbc">Rechner</button></div><h3>Deine Gruppen</h3>';
+ D.g.forEach(function(g){h+='<div class="gc"><button class="btn" data-og="'+g.id+'">'+esc(g.n)+'<small>'+esc(g.p.join(", "))+' · '+g.s.length+' Abende</small></button><button class="btn x" data-dg="'+g.id+'" aria-label="Gruppe löschen">Löschen</button></div>'});
+ if(!D.g.length)h+='<p class="k">Noch keine Gruppe. Lege unten die erste an.</p>';
+ h+='<h3>Neue Gruppe</h3><div class="nf"><input id="gn" placeholder="Name, z. B. Freitagsrunde"><input id="gp" placeholder="Spieler mit Komma, z. B. Anna, Ben, Chris"><button class="btn add" id="ga">+ Gruppe anlegen</button></div>';
+ $("sb").innerHTML=h;
+}
+function ns(g,d){g.s.forEach(function(s){s.o=false});var r=[];for(var i=0;i<10;i++)r.push(g.p.map(function(){return ""}));g.s.unshift({id:uid(),d:d||today(),o:true,r:r})}
+function showSb(v){$("sb").hidden=!v;document.querySelector("main").hidden=!!v;window.scrollTo(0,0)}
+$("sb").addEventListener("click",function(e){
+ var t=e.target,b;
+ if(t.closest("#sbc")){showSb(0)}
+ else if(t.closest("#sbb")){lv()}
+ else if(b=t.closest("[data-og]")){gv(GG(b.dataset.og))}
+ else if(b=t.closest("[data-dg]")){two(b,function(){D.g=D.g.filter(function(g){return g.id!==b.dataset.dg});sv();lv()})}
+ else if(b=t.closest("[data-ds]")){two(b,function(){var a=SS(b.dataset.ds);a[0].s=a[0].s.filter(function(s){return s.id!==b.dataset.ds});sv();gv(a[0])})}
+ else if(b=t.closest("[data-pc]")){
+  if(b.classList.contains("lock"))return;
+  var a=SS(b.dataset.s),ri=+b.dataset.r,pi=+b.dataset.p,s=a[1];s.q=s.q||{};
+  var existing=s.q[ri];
+  if(existing&&existing.p!=null&&existing.p!==pi)return;
+  if(OP&&OP.s===s.id&&OP.r===ri&&existing&&existing.p===pi){OP=null}
+  else{
+   OP={s:s.id,r:ri};
+   var q=existing||(s.q[ri]={g:3,m:1,n:1,w:1});
+   if(q.n>4)q.n=4;
+   if(q.w===undefined)q.w=1;
+   q.p=pi;ap(a[0],s,ri);
+  }
+  reb(a[0],s);
+ }
+ else if(b=t.closest("[data-pp]")){var c=cx();c[2].p=+b.dataset.pp;ap(c[0],c[1],OP.r);reb(c[0],c[1])}
+ else if(b=t.closest("[data-pt]")){
+  var c2=cx(),q2=c2[2],k=b.dataset.pt;q2[k]=q2[k]?0:1;
+  if(q2[k]){(DEP[k]||[]).forEach(function(d){if(D.v[d])q2[d]=1})}else{for(var j in DEP)if(DEP[j].indexOf(k)>-1)q2[j]=0}
+  ap(c2[0],c2[1],OP.r);reb(c2[0],c2[1]);
+ }
+ else if(t.closest("[data-go-calc]")){
+  if(OP){var a=SS(OP.s);RET={g:a[0].id,s:OP.s,r:OP.r};showSb(0);updMA()}
+ }
+ else if(t.closest("[data-px]")){
+  if(OP){var c3=cx();OP=null;RET=null;updMA();reb(c3[0],c3[1])}
+ }
+ else if(t.closest("[data-rz]")){
+  if(OP){var c5=cx(),g5=c5[0],s5=c5[1],ri5=OP.r;s5.r[ri5]=g5.p.map(function(){return ""});delete s5.q[ri5];OP=null;sv();reb(g5,s5)}
+ }
+ else if(t.closest("#ga")){
+  var p=$("gp").value.split(",").map(function(x){return x.trim()}).filter(Boolean).slice(0,4);
+  while(p.length<3)p.push("Spieler "+(p.length+1));
+  var g={id:uid(),n:$("gn").value.trim()||"Skatrunde",p:p,s:[]};ns(g);D.g.push(g);sv();gv(g);
+ }
+ else if(b=t.closest("#gs")){var g2=GG(b.dataset.g);ns(g2,$("nd").value);sv();gv(g2)}
+ else if(b=t.closest("[data-add]")){
+  var a=SS(b.dataset.add),r=a[0].p.map(function(){return ""});a[1].r.push(r);sv();
+  a[1].q=a[1].q||{};reb(a[0],a[1]);
+ }
+});
+$("sb").addEventListener("input",function(e){var t=e.target;if(t.classList.contains("pt")){var a=SS(t.dataset.s);a[1].r[+t.dataset.r][+t.dataset.p]=t.value;sv();upd(a[0],a[1])}});
+$("sb").addEventListener("change",function(e){
+ var t=e.target,a;
+ if(t.dataset.pf){
+ var c4=cx(),q4=c4[2];
+ if(t.dataset.pf==="rvs"){if(t.value==="x"){q4.rvc=1}else{q4.rvc=0;q4.rv=+t.value}}
+ else{q4[t.dataset.pf]=+t.value;if(t.dataset.pf==="rv")q4.rvc=1}
+ if(q4.n>4)q4.n=4;if(q4.g===5&&!q4.nv)q4.nv=23;
+ ap(c4[0],c4[1],OP.r);reb(c4[0],c4[1]);
+}
+ else if(t.dataset.gm){a=GG(t.dataset.gm);a.m=t.value;a.s.forEach(function(s){for(var j in (s.q||{}))ap(a,s,+j)});sv();gv(a)}
+ else if(t.dataset.dt){a=SS(t.dataset.dt);a[1].d=t.value||a[1].d;sv();gv(a[0])}
+ else if(t.dataset.nm!==undefined){var d=t.closest("details");a=SS(d.dataset.s);a[0].p[+t.dataset.nm]=t.value.trim()||"Spieler "+(+t.dataset.nm+1);sv();gv(a[0])}
+});
+$("sb").addEventListener("toggle",function(e){var d=e.target;if(d.dataset&&d.dataset.s){var a=SS(d.dataset.s);if(a){a[1].o=d.open;sv()}}},true);
+build();render();vr();updMA();
+HIST=[snap()];HPOS=0;updHistBtns();
+document.addEventListener("click",function(e){
+ if(e.target.closest("[data-undo]"))undo();
+ else if(e.target.closest("[data-redo]"))redo();
+});
+(function(){
+ var m=document.querySelector("main");
+ Array.prototype.slice.call(m.querySelectorAll("h2")).forEach(function(h,i){
+  var d=document.createElement("details"),s=document.createElement("summary"),n=h.nextElementSibling;
+  if(i<7)d.open=true;
+  s.textContent=h.textContent;d.appendChild(s);h.parentNode.insertBefore(d,h);
+  while(n&&n.tagName!=="H2"&&!n.classList.contains("sum")){var x=n.nextElementSibling;d.appendChild(n);n=x}
+  h.remove();
+ });
+})();
+</script>
+</body>
+</html>
